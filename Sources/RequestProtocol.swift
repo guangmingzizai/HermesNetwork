@@ -30,7 +30,7 @@ import Alamofire
 import Hydra
 
 /// This is the base class for a Request
-public protocol RequestProtocol {
+public protocol RequestProtocol: class {
 	
 	/// Invalidation may be used to cancel the request.
 	/// If `nil` is returned it will be ignored (and request cannot be cancelled

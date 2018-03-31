@@ -210,3 +210,7 @@ public struct RequestBody {
 	}
 }
 
+public typealias RequestAdapter = (RequestProtocol) -> Void
+public typealias ResponseFilter = (ResponseProtocol) -> Void
+public typealias ResponseValidater = (ResponseProtocol) -> Error?
+

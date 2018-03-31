@@ -56,7 +56,7 @@ extension Timeline: ResponseTimeline {
 	
 }
 
-public protocol ResponseProtocol {
+public protocol ResponseProtocol: class {
 	
 	/// Type of response (success or failure)
 	var type: Response.Result { get }
@@ -168,7 +168,10 @@ public class Response: ResponseProtocol {
 	}
 	
 	private lazy var cachedJSON: JSON = {
-		return JSON(data: self.data ?? Data())
+        if let json = try? JSON(data: self.data ?? Data()) {
+            return json
+        }
+		return JSON(Data())
 	}()
 	
 }

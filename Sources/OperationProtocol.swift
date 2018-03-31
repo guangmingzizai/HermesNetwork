@@ -41,5 +41,4 @@ protocol OperationProtocol {
 	///   - retry: retry attempts
 	/// - Returns: Promise
 	func execute(in service: ServiceProtocol, retry: Int?) -> Promise<T>
-	
 }

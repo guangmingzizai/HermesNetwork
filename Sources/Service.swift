@@ -43,7 +43,7 @@ public class Service: ServiceProtocol {
 	/// - Parameter configuration: configuration. If `nil` is passed attempt to load configuration from your app's Info.plist
 	public required init(_ configuration: ServiceConfig) {
 		self.configuration = configuration
-		self.headers = self.configuration.headers // fillup with initial headers
+		self.headers = configuration.headers // fillup with initial headers
 	}
 	
 	/// Execute a request and return a promise with the response
@@ -56,15 +56,21 @@ public class Service: ServiceProtocol {
 	public func execute(_ request: RequestProtocol, retry: Int?) -> Promise<ResponseProtocol> {
 		// Wrap in a promise the request itself
 		let op = Promise<ResponseProtocol>(in: request.context ?? .background, token: request.invalidationToken, { (r, rj, s) in
+            self.adaptRequest(request: request)
 			// Attempt to create the object to perform request
 			let dataOperation: DataRequest = try Alamofire.request(request.urlRequest(in: self))
 			// Execute operation in Alamofire
 			dataOperation.response(completionHandler: { rData in
 				// Parse response
 				let parsedResponse = Response(afResponse: rData, request: request)
+                self.filterResponse(response: parsedResponse)
 				switch parsedResponse.type {
 				case .success: // success
-					r(parsedResponse)
+                    if let responseValidater = self.configuration.responseValidater, let error = responseValidater(parsedResponse) {
+                        rj(error)
+                    } else {
+                        r(parsedResponse)
+                    }
 				case .error: // failure
 					rj(NetworkError.error(parsedResponse))
 				case .noResponse:  // no response
@@ -75,5 +81,16 @@ public class Service: ServiceProtocol {
 		guard let retryAttempts = retry else { return op } // single shot
 		return op.retry(retryAttempts) // retry n times
 	}
+    
+    private func filterResponse(response: ResponseProtocol) {
+        for filter in configuration.responseFilters {
+            filter(response)
+        }
+    }
 	
+    private func adaptRequest(request: RequestProtocol) {
+        for adapter in configuration.requestAdapters {
+            adapter(request)
+        }
+    }
 }
